@@ -8,6 +8,8 @@ use Aiobale\Dispatcher\Router;
 use Aiobale\Exception\AiobaleException;
 use Aiobale\Exception\BaleApiException;
 use Aiobale\Enums\SendCodeType;
+use Aiobale\Enums\SendType;
+use Aiobale\Methods\Files\GetFileUploadUrl;
 use Aiobale\Methods\MethodRegistry;
 use Aiobale\Methods\Auth\SignOut;
 use Aiobale\Methods\Auth\SignUp;
@@ -19,10 +21,13 @@ use Aiobale\Model\BaleMethod;
 use Aiobale\Model\BaleObject;
 use Aiobale\Protocol\ProtoBuf;
 use Aiobale\Types\ExtData;
+use Aiobale\Types\FileDetails;
+use Aiobale\Types\FileUploadInfo;
 use Aiobale\Types\Message;
 use Aiobale\Types\OtherMessage;
 use Aiobale\Types\Responses\PhoneAuthResponse;
 use Aiobale\Types\Responses\ValidateCodeResponse;
+use Aiobale\Types\SendTypeModel;
 use Amp\DeferredFuture;
 use Amp\Future;
 use Amp\ByteStream\ReadableIterableStream;
@@ -363,28 +368,75 @@ final class Client
         FileInput $file,
         string $url,
         ?callable $progress = null,
+        ?int $chunkSize = null,
     ): Future {
-        return async(function () use ($file, $url, $progress): void {
-            $headers = [
-                'Origin' => 'https://web.bale.ai',
-                'content-type' => 'multipart/form-data',
-                'Cookie' => 'access_token=' . $this->token,
-            ];
+        return async(function () use ($file, $url, $progress, $chunkSize): void {
+            if ($url === '') {
+                throw new AiobaleException('A Bale upload URL is required.');
+            }
+
+            $chunkSize ??= 262144;
+            if ($chunkSize <= 0) {
+                throw new AiobaleException('The Bale upload chunk size must be positive.');
+            }
+
             $request = new Request($url, 'PUT');
-            $request->setHeaders($headers);
+            $request->setTransferTimeout(600);
+            $request->setInactivityTimeout(600);
             $request->setBody(StreamedContent::fromStream(
-                new ReadableIterableStream($file->chunks(4096, $progress)),
+                new ReadableIterableStream($file->chunks($chunkSize, $progress)),
                 $file->size,
-                'multipart/form-data',
             ));
             $response = $this->http->request($request);
-            if ($response->getStatus() >= 400) {
+            if ($response->getStatus() < 200 || $response->getStatus() >= 300) {
                 throw new AiobaleException(sprintf(
                     'Upload failed with status %d: %s',
                     $response->getStatus(),
                     $response->getBody()->buffer(),
                 ));
             }
+        });
+    }
+
+    public function uploadFile(
+        FileInput $file,
+        SendType $sendType = SendType::DOCUMENT,
+        ?callable $progress = null,
+    ): Future {
+        return async(function () use ($file, $sendType, $progress): FileDetails {
+            $userId = $this->userId();
+            if ($userId === null) {
+                throw new AiobaleException('A Bale user ID is required before uploading a file.');
+            }
+
+            $uploadInfo = $this->invoke(new GetFileUploadUrl([
+                'expected_size' => $file->size,
+                'crc' => $file->crc32(),
+                'user_id' => $userId,
+                'name' => $file->name,
+                'mime_type' => $file->mimeType,
+                'send_type' => new SendTypeModel(['type' => $sendType]),
+            ]))->await();
+
+            if (!$uploadInfo instanceof FileUploadInfo) {
+                throw new AiobaleException('Bale returned an invalid file upload response.');
+            }
+
+            if (!$uploadInfo->duplicate) {
+                if ($uploadInfo->url === '') {
+                    throw new AiobaleException('Bale did not return a file upload URL.');
+                }
+
+                $this->upload($file, $uploadInfo->url, $progress, $uploadInfo->chunk_size)->await();
+            }
+
+            return new FileDetails([
+                'file_id' => $uploadInfo->file_id,
+                'access_hash' => $userId,
+                'size' => $file->size,
+                'name' => $file->name,
+                'mime_type' => $file->mimeType,
+            ]);
         });
     }
 

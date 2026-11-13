@@ -408,7 +408,7 @@ BALE_ACCESS_TOKEN='JWT-خودتان' php example/userbot.php
 
 ## فایل
 
-فایل را از مسیر یا حافظه بسازید و به `upload()` بدهید:
+برای دریافت URL و آپلود مستقیم فایل به فضای Bale از `uploadFile()` استفاده کنید:
 
 ```php
 use Aiobale\Client\FileInput;
@@ -417,21 +417,20 @@ $file = FileInput::fromPath('/مسیر/خصوصی/document.pdf');
 // یا:
 $file = FileInput::fromBytes($bytes, 'document.pdf', 'application/pdf');
 
-// $uploadUrl باید از endpoint دریافت URL آپلود بله آمده باشد.
-$client->upload(
+$uploaded = $client->uploadFile(
     $file,
-    $uploadUrl,
-    static function (int $sent, ?int $total): void {
+    progress: static function (int $sent, ?int $total): void {
         printf("آپلود: %d / %s بایت\n", $sent, $total ?? '?');
     },
 )->await();
 
-$downloadedBytes = $client->download($downloadUrl)->await();
+echo $uploaded->file_id;
+echo $uploaded->access_hash;
 ```
 
-برای ارسال فایل به‌عنوان پیام، ابتدا URL آپلود را از متدهای بخش `Files` بگیرید،
-سپس فایل را آپلود و اطلاعات فایل را در متد مناسب پیام استفاده کنید. این سه مرحله
-را با URL واقعی و توکن همان حساب انجام دهید.
+`uploadFile()` checksum و URL آپلود را درخواست می‌کند، اندازهٔ chunk برگشتی Bale را
+رعایت می‌کند و اطلاعات فایل را برمی‌گرداند. متد سطح پایین `upload()` همچنان برای
+فرستادن `FileInput` به URL آپلودی که از قبل دارید در دسترس است.
 
 ## مدل‌ها و متدها
 

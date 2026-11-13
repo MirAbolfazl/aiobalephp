@@ -57,6 +57,16 @@ class FileInput
         return $contents;
     }
 
+    public function crc32(): int
+    {
+        $context = hash_init('crc32b');
+        foreach ($this->chunks(1024 * 1024) as $chunk) {
+            hash_update($context, $chunk);
+        }
+
+        return (int) hexdec(hash_final($context));
+    }
+
     /**
      * @return iterable<string>
      */

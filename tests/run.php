@@ -6,6 +6,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 use Aiobale\Methods\Messaging\SendMessage;
 use Aiobale\Methods\MethodRegistry;
+use Aiobale\Methods\Files\GetFileUploadUrl;
 use Aiobale\Protocol\ProtoBuf;
 use Aiobale\Enums\PeerType;
 use Aiobale\Client\Client;
@@ -14,6 +15,7 @@ use Aiobale\Dispatcher\Router;
 use Aiobale\Types\Chat;
 use Aiobale\Types\ExtData;
 use Aiobale\Types\ExtValue;
+use Aiobale\Types\FileUploadInfo;
 use Aiobale\Types\MessageContent;
 use Aiobale\Types\Peer;
 use Aiobale\Types\Response;
@@ -108,6 +110,20 @@ assertSameValue(4, $input->size, 'In-memory upload size should be reported.');
 assertSameValue('data', $input->contents(), 'In-memory upload contents should be preserved.');
 $chunks = iterator_to_array($input->chunks(2));
 assertSameValue(['da', 'ta'], $chunks, 'File contents should be exposed as chunks.');
+$crcInput = \Aiobale\Types\FileInput::fromBytes('123456789', 'file.bin');
+assertSameValue(3421780262, $crcInput->crc32(), 'Upload checksums should use Bale CRC32 values.');
+$uploadRequest = new GetFileUploadUrl([
+    'expected_size' => $crcInput->size,
+    'crc' => $crcInput->crc32(),
+    'user_id' => 42,
+    'name' => $crcInput->name,
+    'mime_type' => $crcInput->mimeType,
+]);
+$uploadRequestData = $codec->decode($codec->encode($uploadRequest), GetFileUploadUrl::class);
+assertSameValue(3421780262, $uploadRequestData['2'], 'Upload requests should encode CRC in protobuf field 2.');
+$uploadInfo = FileUploadInfo::fromWire(['1' => 123, '3' => 1]);
+assertSameValue(true, $uploadInfo->duplicate, 'Duplicate upload responses should be recognized.');
+assertSameValue('', $uploadInfo->url, 'Duplicate upload responses may omit an upload URL.');
 
 $sessionPath = sys_get_temp_dir() . '/aiobale-php-test-' . bin2hex(random_bytes(6)) . '/session.json';
 $sessionStore = new SessionStore($sessionPath);
