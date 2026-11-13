@@ -122,6 +122,11 @@ $sessionClient->deleteSession();
 assertSameValue(null, $sessionStore->load(), 'Deleting a session should remove its file.');
 rmdir(dirname($sessionPath));
 
+$tokenClient = new Client();
+$tokenClient->setSessionToken('account.jwt.token', 99);
+assertSameValue('account.jwt.token', $tokenClient->token(), 'A database-backed session token should be usable without opening a WebSocket.');
+assertSameValue(99, $tokenClient->userId(), 'A database-backed session should retain the account user ID.');
+
 $router = new Router();
 $router->on('test', static fn (int $number): int => $number + 1, static fn (int $number): bool => $number > 0);
 assertSameValue(3, $router->dispatch('test', 2)->await(), 'Router handlers should run through AMPHP futures.');

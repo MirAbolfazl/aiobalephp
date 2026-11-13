@@ -191,6 +191,21 @@ final class Client
         return $this->token !== '' ? $this->token : null;
     }
 
+    public function setSessionToken(string $token, ?int $userId = null): self
+    {
+        if ($token === '') {
+            throw new AiobaleException('A non-empty session token is required.');
+        }
+        if ($this->running) {
+            throw new AiobaleException('A session token cannot be replaced while the client is connected.');
+        }
+
+        $this->token = $token;
+        $this->authenticatedUserId = $userId ?? $this->extractUserId($token);
+
+        return $this;
+    }
+
     public function saveSession(): void
     {
         if ($this->sessionStore === null) {
