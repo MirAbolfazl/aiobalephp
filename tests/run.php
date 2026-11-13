@@ -56,6 +56,8 @@ assertSameValue('SendMessage', $method::methodName(), 'Method name metadata shou
 assertSameValue(SendMessage::class, MethodRegistry::resolve('send_message'), 'Snake-case lookup should find the API method.');
 
 $client = (new Client())->setUserId(77);
+$phoneAuthParameters = (new ReflectionMethod(Client::class, 'startPhoneAuth'))->getParameters();
+assertSameValue(true, $phoneAuthParameters[1]->isDefaultValueAvailable(), 'Phone authentication should provide a default app key.');
 $materialize = new ReflectionMethod($client, 'materializeResult');
 $sentMessage = $materialize->invoke($client, [1 => 4, 2 => 1234], $method);
 assertSameValue(MessageResponse::class, $sentMessage::class, 'Send-message results should use their typed response model.');

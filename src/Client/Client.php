@@ -42,6 +42,7 @@ final class Client
     private const DEFAULT_WS_URL = 'wss://next-ws.bale.ai/ws/';
     private const DEFAULT_POST_URL = 'https://next-ws.bale.ai';
     private const DEFAULT_TIMEOUT = 5.0;
+    private const DEFAULT_APP_KEY = 'C28D46DC4C3A7A26564BFCC48B929086A95C93C98E789A19847BEE8627DE4E7D';
     private const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36';
 
     private readonly ProtoBuf $codec;
@@ -112,7 +113,7 @@ final class Client
 
     public function startPhoneAuth(
         int|string $phoneNumber,
-        string $appKey,
+        string $appKey = self::DEFAULT_APP_KEY,
         SendCodeType $codeType = SendCodeType::DEFAULT,
         int $appId = 4,
         ?string $deviceHash = null,

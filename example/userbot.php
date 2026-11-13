@@ -18,6 +18,17 @@ use Aiobale\Types\TextMessage;
 use function Amp\async;
 use function Amp\delay;
 
+function prompt(string $message): string
+{
+    fwrite(STDOUT, $message);
+    $value = fgets(STDIN);
+    if ($value === false) {
+        throw new RuntimeException('Could not read input from the terminal.');
+    }
+
+    return trim($value);
+}
+
 $sessionFile = getenv('BALE_SESSION_FILE')
     ?: dirname(__DIR__) . '/var/bale-session.json';
 $accessToken = getenv('BALE_ACCESS_TOKEN') ?: null;
@@ -25,16 +36,34 @@ $client = new Client(sessionFile: $sessionFile);
 
 try {
     async(function () use ($client, $accessToken): void {
+        if ($accessToken === null && $client->token() === null) {
+            $phoneNumber = prompt('Phone number (international format, e.g. +989123456789): ');
+            $challenge = $client->startPhoneAuth(
+                phoneNumber: $phoneNumber,
+                deviceTitle: 'aiobale-php userbot',
+            )->await();
+
+            printf(
+                "A login code was sent using %s. Enter the code to continue.\n",
+                $challenge->sent_code_type->name,
+            );
+            $code = prompt('Login code: ');
+
+            try {
+                $client->validateCode($code, $challenge->transaction_hash)->await();
+            } catch (BaleApiException $exception) {
+                if (stripos($exception->getMessage(), 'password needed') === false) {
+                    throw $exception;
+                }
+
+                $password = prompt('Two-step verification password: ');
+                $client->validatePassword($password, $challenge->transaction_hash)->await();
+            }
+
+            echo "Login successful. The session was saved locally.\n";
+        }
+
         $client->on('message', static function (Message $message, Client $client): void {
-            $userId = $client->userId();
-            if ($userId === null) {
-                return;
-            }
-
-            if ($message->sender_id === $userId) {
-                return;
-            }
-
             if ($message->chat->type !== ChatType::PRIVATE) {
                 return;
             }
@@ -59,12 +88,12 @@ try {
                 ]),
             ]))->await();
 
-            echo "به فرمان !ping پاسخ داده شد.\n";
+            echo "Replied to !ping.\n";
         });
 
         $client->connect($accessToken)->await();
 
-        echo "Userbot فعال است؛ برای توقف Ctrl+C را بزنید.\n";
+        echo "Userbot is running. Send !ping in a private chat. Press Ctrl+C to stop.\n";
 
         while ($client->isRunning()) {
             delay(1);
@@ -73,13 +102,13 @@ try {
 } catch (BaleApiException $exception) {
     fprintf(
         STDERR,
-        "خطای API بله (%d): %s\n",
+        "Bale API error (%d): %s\n",
         $exception->topic,
         $exception->getMessage(),
     );
     exit(1);
 } catch (AiobaleException $exception) {
-    fwrite(STDERR, "خطای کلاینت: {$exception->getMessage()}\n");
+    fwrite(STDERR, "Client error: {$exception->getMessage()}\n");
     exit(1);
 } finally {
     if ($client->isRunning()) {
