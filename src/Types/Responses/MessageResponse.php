@@ -10,6 +10,7 @@ class MessageResponse extends \Aiobale\Types\Responses\DefaultResponse
     {
         return array_replace(parent::schema(), [
             "message" => ['alias' => "message", 'type' => \Aiobale\Types\Message::class, 'required' => true],
+            "ext_data" => ['alias' => "4", 'type' => "array", 'items' => \Aiobale\Types\ExtData::class, 'default' => []],
         ]);
     }
 }

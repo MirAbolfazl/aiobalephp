@@ -12,6 +12,8 @@ use Aiobale\Client\Client;
 use Aiobale\Client\SessionStore;
 use Aiobale\Dispatcher\Router;
 use Aiobale\Types\Chat;
+use Aiobale\Types\ExtData;
+use Aiobale\Types\ExtValue;
 use Aiobale\Types\MessageContent;
 use Aiobale\Types\Peer;
 use Aiobale\Types\Response;
@@ -63,6 +65,23 @@ $sentMessage = $materialize->invoke($client, [1 => 4, 2 => 1234], $method);
 assertSameValue(MessageResponse::class, $sentMessage::class, 'Send-message results should use their typed response model.');
 assertSameValue(77, $sentMessage->message->sender_id, 'Sent-message responses should use the configured user ID.');
 assertSameValue(7, $sentMessage->message->message_id, 'Sent-message responses should retain the request message ID.');
+$sentMessageWire = $codec->encode([
+    '2' => 1234,
+    '4' => [
+        new ExtData([
+            'name' => 'previous_message_rid',
+            'value' => new ExtValue(['number' => 45]),
+        ]),
+        new ExtData([
+            'name' => 'previous_message_date',
+            'value' => new ExtValue(['number' => 6789]),
+        ]),
+    ],
+]);
+$sentMessageData = $codec->decode($sentMessageWire, MessageResponse::class);
+$sentMessageWithExtensions = $materialize->invoke($client, $sentMessageData, $method);
+assertSameValue(45, $sentMessageWithExtensions->message->previous_message->message_id, 'Send-message extensions should decode as repeated ExtData entries.');
+assertSameValue(6789, $sentMessageWithExtensions->message->previous_message->date, 'Previous-message extension dates should be retained.');
 $template = new TemplateMessage(['message' => new MessageContent()]);
 assertSameValue(16, strlen((string) $template->temp_id), 'Template messages should generate a 16-digit temporary ID.');
 
