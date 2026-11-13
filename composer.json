@@ -2,6 +2,14 @@
   "name": "aiobale/aiobale-php",
   "description": "Asynchronous PHP client for the Bale messaging API",
   "type": "library",
+  "license": "MIT",
+  "homepage": "https://github.com/MirAbolfazl/aiobalephp",
+  "authors": [
+    {
+      "name": "Abolfazl",
+      "homepage": "https://github.com/MirAbolfazl"
+    }
+  ],
   "require": {
     "php": "^8.2",
     "amphp/amp": "^3.0",
