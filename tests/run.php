@@ -58,6 +58,14 @@ $method = new SendMessage([
 assertSameValue('bale.messaging.v2.Messaging', $method::service(), 'Method service metadata should be preserved.');
 assertSameValue('SendMessage', $method::methodName(), 'Method name metadata should be preserved.');
 assertSameValue(SendMessage::class, MethodRegistry::resolve('send_message'), 'Snake-case lookup should find the API method.');
+$walletMethod = MethodRegistry::resolve('GetMyWallets');
+assertSameValue('bale.wallet.v1.Wallet', $walletMethod::service(), 'Generated wallet RPCs should be registered.');
+$groupPinMethod = MethodRegistry::resolve('bale.groups.v1.Groups.PinMessage');
+assertSameValue(
+    \Aiobale\Methods\Groups\PinGroupMessage::class,
+    $groupPinMethod,
+    'Service-qualified RPC names should resolve duplicate method names.',
+);
 
 $client = (new Client())->setUserId(77);
 $phoneAuthParameters = (new ReflectionMethod(Client::class, 'startPhoneAuth'))->getParameters();
@@ -134,6 +142,62 @@ assertSameValue(262144, $uploadRequestData['8'], 'Upload requests should encode 
 $uploadInfo = FileUploadInfo::fromWire(['1' => 123, '3' => 1]);
 assertSameValue(true, $uploadInfo->duplicate, 'Duplicate upload responses should be recognized.');
 assertSameValue('', $uploadInfo->url, 'Duplicate upload responses may omit an upload URL.');
+
+$feedbackClass = MethodRegistry::resolve('SubmitMarketFeedback');
+$feedbackSchema = $feedbackClass::schema();
+$mapField = null;
+foreach ($feedbackSchema as $fieldName => $definition) {
+    if (($definition['type'] ?? null) === 'map') {
+        $mapField = $fieldName;
+        break;
+    }
+}
+if ($mapField === null) {
+    throw new RuntimeException('Generated market feedback RPC should expose its map field.');
+}
+$feedback = new $feedbackClass([$mapField => ['topic' => 'feedback']]);
+$feedbackData = $codec->decode($codec->encode($feedback), $feedbackClass);
+assertSameValue(
+    ['topic' => 'feedback'],
+    $feedbackData[$feedbackSchema[$mapField]['alias']],
+    'Generated map fields should round-trip through protobuf.',
+);
+
+$doubleModel = new class extends \Aiobale\Model\BaleObject {
+    public static function schema(): array
+    {
+        return ['value' => ['alias' => '1', 'type' => 'float', 'wire' => 'double', 'default' => null]];
+    }
+};
+$double = new ($doubleModel::class)(['value' => 1.25]);
+$doubleData = $codec->decode($codec->encode($double), $double::class);
+assertSameValue(1.25, $doubleData['1'], 'Double fields should round-trip using their fixed-width wire encoding.');
+
+$packedFloatModel = new class extends \Aiobale\Model\BaleObject {
+    public static function schema(): array
+    {
+        return ['values' => [
+            'alias' => '1',
+            'type' => 'array',
+            'items' => 'float',
+            'items_wire' => 'float',
+            'default' => [],
+        ]];
+    }
+};
+$packedFloats = "\x0a\x08" . pack('g', 1.25) . pack('g', 2.5);
+$packedFloatData = $codec->decode($packedFloats, $packedFloatModel::class);
+assertSameValue([1.25, 2.5], $packedFloatData['1'], 'Packed repeated float fields should decode.');
+
+$sint64Model = new class extends \Aiobale\Model\BaleObject {
+    public static function schema(): array
+    {
+        return ['value' => ['alias' => '1', 'type' => 'int', 'wire' => 'sint64', 'default' => null]];
+    }
+};
+$sint64 = new ($sint64Model::class)(['value' => PHP_INT_MAX]);
+$sint64Data = $codec->decode($codec->encode($sint64), $sint64::class);
+assertSameValue(PHP_INT_MAX, $sint64Data['1'], 'sint64 values at the PHP integer limit should round-trip.');
 
 $sessionPath = sys_get_temp_dir() . '/aiobale-php-test-' . bin2hex(random_bytes(6)) . '/session.json';
 $sessionStore = new SessionStore($sessionPath);

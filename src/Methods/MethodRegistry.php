@@ -8,7 +8,7 @@ final class MethodRegistry
 {
     public static function all(): array
     {
-        return [
+        $methods = [
             "AddContact" => \Aiobale\Methods\User\AddContact::class,
             "BlockUser" => \Aiobale\Methods\User\BlockUser::class,
             "CheckNickName" => \Aiobale\Methods\User\CheckNickName::class,
@@ -89,6 +89,8 @@ final class MethodRegistry
             "ValidateCode" => \Aiobale\Methods\Auth\ValidateCode::class,
             "ValidatePassword" => \Aiobale\Methods\Auth\ValidatePassword::class,
         ];
+
+        return array_replace($methods, \Aiobale\Methods\Generated\AiobalePhpRpcCatalog::all());
     }
 
     public static function resolve(string $name): ?string

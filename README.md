@@ -453,6 +453,10 @@ $peer = new Peer(['1' => 1, '2' => 12345]);
 
 - فهرست کلاس‌های API با `Aiobale\Methods\MethodRegistry::all()` در دسترس است.
   `resolve('send_message')` هم نام متد را به کلاس مربوطه تبدیل می‌کند.
+- رجیستری همچنین RPCهای تولیدشده در کاتالوگ پروتکل aiobalephp را در بر می‌گیرد؛
+  برای نام‌های تکراری می‌توانید از نام کامل سرویس، مثل
+  `bale.groups.v1.Groups.PinMessage`، استفاده کنید. اعلان مجوز MIT منبع در
+  `third-party-licenses/aiobalephp-protocol-MIT.txt` قرار دارد.
 - گروه‌های API ترجمه‌شده شامل Auth، Messaging، User، Groups، Files، Presence،
   Report، Configs، Abacus، Giftpacket، Kifpool و Magazine هستند.
 - تمام فراخوانی‌های شبکه `Amp\Future` برمی‌گردانند؛ آن‌ها را در Fiber/`Amp\async`

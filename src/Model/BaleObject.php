@@ -117,6 +117,26 @@ abstract class BaleObject implements JsonSerializable
         return $result;
     }
 
+    /**
+     * @return array<int|string, array{value: mixed, definition: array<string, mixed>}>
+     */
+    public function wireFields(): array
+    {
+        $fields = [];
+        $schema = static::schema();
+
+        foreach ($this->attributes as $name => $value) {
+            $definition = $schema[$name] ?? [];
+            $key = $definition['alias'] ?? $name;
+            $fields[$key] = [
+                'value' => $value,
+                'definition' => $definition,
+            ];
+        }
+
+        return $fields;
+    }
+
     public function jsonSerialize(): array
     {
         return $this->modelDump();
@@ -150,6 +170,18 @@ abstract class BaleObject implements JsonSerializable
                 static fn (mixed $item): mixed => self::normalizeTyped($item, $itemType),
                 $value,
             );
+        }
+
+        if (($definition['type'] ?? null) === 'map') {
+            if (!is_array($value)) {
+                throw new UnexpectedValueException('Expected a map value.');
+            }
+
+            $valueType = $definition['value_type'] ?? 'mixed';
+            foreach ($value as $key => $item) {
+                $value[$key] = self::normalizeTyped($item, $valueType);
+            }
+            return $value;
         }
 
         return self::normalizeTyped($value, $definition['type'] ?? 'mixed');
