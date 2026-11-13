@@ -28,6 +28,8 @@
   },
   "scripts": {
     "test": "php tests/run.php",
-    "lint": "find src tests example -name '*.php' -print0 | xargs -0 -n1 php -l"
+    "lint": "find src tests example -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "docs:swagger": "php docs/swagger/generate.php",
+    "docs:swagger:serve": "php -S 127.0.0.1:8080 -t docs/swagger"
   }
 }

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aiobale PHP SDK Swagger</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+        body { margin: 0; background: #f5f7fb; font-family: Arial, sans-serif; }
+        .toolbar { background: #0b1f33; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .toolbar label { margin-right: 10px; }
+        select { padding: 8px 12px; border-radius: 8px; border: 0; }
+        #swagger-ui { max-width: 1400px; margin: 0 auto; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <strong>Aiobale PHP SDK</strong>
+        <div>
+            <label for="langSelect">Language</label>
+            <select id="langSelect">
+                <option value="openapi.en.yaml">English</option>
+                <option value="openapi.fa.yaml">فارسی</option>
+            </select>
+        </div>
+    </div>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>
+        const select = document.getElementById('langSelect');
+        const render = (url) => {
+            window.ui?.dispose();
+            window.ui = SwaggerUIBundle({
+                url,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                docExpansion: 'list',
+                filter: true,
+                persistAuthorization: true,
+                tryItOutEnabled: false,
+            });
+        };
+        select.addEventListener('change', (event) => render(event.target.value));
+        render('openapi.en.yaml');
+    </script>
+</body>
+</html>
