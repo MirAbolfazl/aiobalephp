@@ -9,11 +9,15 @@ $base = [
     'info' => [
         'title' => 'Aiobale PHP SDK',
         'version' => '1.0.0',
-        'description' => "Async PHP client for the Bale messaging API. This OpenAPI document is generated automatically and includes the public authentication, messaging, file, and group flows used by the SDK.",
+        'description' => "Async PHP client for the Bale messaging API. This OpenAPI document describes selected public flows. The complete generated RPC registry, including every request field, protobuf alias, service, and response model, is available in rpc-reference.md.",
         'license' => ['name' => 'MIT', 'url' => 'https://opensource.org/licenses/MIT'],
     ],
     'servers' => [
         ['url' => 'https://next-ws.bale.ai', 'description' => 'Bale API gateway'],
+    ],
+    'externalDocs' => [
+        'description' => 'Complete reference for all registered RPC methods.',
+        'url' => 'rpc-reference.md',
     ],
     'tags' => [
         ['name' => 'Auth', 'description' => 'Phone authentication, validation, and session management.'],
@@ -139,7 +143,8 @@ $base = [
 ];
 
 $fa = $base;
-$fa['info']['description'] = "کلاینت ناهم‌گام PHP برای API پیام‌رسان بله. این مستند OpenAPI به‌صورت خودکار تولید می‌شود و جریان‌های عمومی احراز هویت، پیام‌رسانی، فایل و گروه را پوشش می‌دهد.";
+$fa['info']['description'] = "کلاینت ناهم‌گام PHP برای API پیام‌رسان بله. این سند OpenAPI جریان‌های منتخب را پوشش می‌دهد. مرجع کامل و تولیدشدهٔ RPCها، شامل همهٔ فیلدهای درخواست، شماره‌های protobuf، سرویس و مدل پاسخ، در rpc-reference.md قرار دارد.";
+$fa['externalDocs']['description'] = 'مرجع کامل همهٔ متدهای RPC ثبت‌شده.';
 $fa['tags'][0]['description'] = 'احراز هویت شماره تلفن، اعتبارسنجی و مدیریت سشن.';
 $fa['tags'][1]['description'] = 'ارسال، خواندن، به‌روزرسانی و حذف پیام‌ها.';
 $fa['tags'][2]['description'] = 'عملیات مخاطبین و پروفایل کاربر.';
@@ -197,6 +202,7 @@ $index = <<<'HTML'
     <div class="toolbar">
         <strong>Aiobale PHP SDK</strong>
         <div>
+            <a href="rpc-reference.md" style="color: white; margin-right: 20px;">Complete RPC catalog</a>
             <label for="langSelect">Language</label>
             <select id="langSelect">
                 <option value="openapi.en.yaml">English</option>
@@ -229,5 +235,7 @@ $index = <<<'HTML'
 HTML;
 
 file_put_contents($root . '/index.html', $index . PHP_EOL);
+
+require __DIR__ . '/generate-rpc-reference.php';
 
 echo "Swagger files generated successfully in {$root}\n";

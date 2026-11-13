@@ -3,7 +3,7 @@
     "info": {
         "title": "Aiobale PHP SDK",
         "version": "1.0.0",
-        "description": "Async PHP client for the Bale messaging API. This OpenAPI document is generated automatically and includes the public authentication, messaging, file, and group flows used by the SDK.",
+        "description": "Async PHP client for the Bale messaging API. This OpenAPI document describes selected public flows. The complete generated RPC registry, including every request field, protobuf alias, service, and response model, is available in rpc-reference.md.",
         "license": {
             "name": "MIT",
             "url": "https://opensource.org/licenses/MIT"
@@ -15,6 +15,10 @@
             "description": "Bale API gateway"
         }
     ],
+    "externalDocs": {
+        "description": "Complete reference for all registered RPC methods.",
+        "url": "rpc-reference.md"
+    },
     "tags": [
         {
             "name": "Auth",

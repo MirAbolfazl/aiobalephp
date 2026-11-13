@@ -63,6 +63,45 @@ $client->connect()->await();
 $client->invoke($method)->await();
 ```
 
+## مرجع کامل متدهای RPC
+
+رجیستری **۶۹۰ کلید برای ۶۸۹ زوج یکتای سرویس/متد بله** دارد. [مرجع کامل RPCها](docs/swagger/rpc-reference.md)
+همهٔ کلیدها، سرویس و نام RPC، فیلدهای سطح اول درخواست، شمارهٔ فیلد protobuf، اجباری‌بودن و مدل پاسخ را
+فهرست می‌کند. برای فیلدهای تو‌در‌تو به کلاس مدل یا enum درج‌شده مراجعه کنید؛ endpoint
+`GET /api/v1/bale/methods` در پروژهٔ API نیز schemaهای بازشدهٔ تو‌در‌تو را برمی‌گرداند.
+
+فراخوانی یک RPC با نام رجیستری:
+
+```php
+use Aiobale\Client\Client;
+use Aiobale\Methods\MethodRegistry;
+use function Amp\async;
+
+$client = new Client(sessionFile: __DIR__ . '/var/bale-session.json');
+
+async(function () use ($client): void {
+    $methodClass = MethodRegistry::resolve('GetMyWallets');
+    if ($methodClass === null) {
+        throw new InvalidArgumentException('متد RPC بله پیدا نشد.');
+    }
+
+    // GetMyWallets فیلد ورودی ندارد؛ بقیهٔ متدها آرایهٔ فیلدهای درخواست را می‌گیرند.
+    $result = $client->invoke(new $methodClass())->await();
+    var_dump($result);
+})->await();
+```
+
+نمونهٔ [rpc.php](example/rpc.php) هر کلید رجیستری و payload از نوع JSON را می‌پذیرد:
+
+```bash
+php example/rpc.php GetMyWallets '{}'
+php example/rpc.php SendMessage '{"peer":{"type":1,"id":123456},"message_id":123456789,"content":{"text":{"value":"سلام"}},"chat":{"type":1,"id":123456}}'
+```
+
+این نمونه از سشن ساخته‌شده با `example/userbot.php` یا متغیرهای محیطی
+`BALE_ACCESS_TOKEN` و `BALE_SESSION_FILE` استفاده می‌کند. برای متدهای هم‌نام از کلید کامل سرویس،
+مانند `bale.groups.v1.Groups.PinMessage`، استفاده کنید.
+
 ## مستندات Swagger
 
 برای تولید و باز کردن مستندات OpenAPI/Swagger به‌صورت خودکار:
@@ -77,6 +116,8 @@ composer docs:swagger:serve
 ```text
 http://127.0.0.1:8080/
 ```
+
+کاتالوگ کامل RPCها نیز در Swagger UI پیوند دارد و با `composer docs:swagger` دوباره تولید می‌شود.
 
 ## تست
 
