@@ -25,6 +25,7 @@ use Aiobale\Types\FileDetails;
 use Aiobale\Types\FileUploadInfo;
 use Aiobale\Types\Message;
 use Aiobale\Types\OtherMessage;
+use Aiobale\Types\Peer;
 use Aiobale\Types\Responses\PhoneAuthResponse;
 use Aiobale\Types\Responses\ValidateCodeResponse;
 use Aiobale\Types\SendTypeModel;
@@ -402,8 +403,9 @@ final class Client
         FileInput $file,
         SendType $sendType = SendType::DOCUMENT,
         ?callable $progress = null,
+        ?Peer $peer = null,
     ): Future {
-        return async(function () use ($file, $sendType, $progress): FileDetails {
+        return async(function () use ($file, $sendType, $progress, $peer): FileDetails {
             $userId = $this->userId();
             if ($userId === null) {
                 throw new AiobaleException('A Bale user ID is required before uploading a file.');
@@ -415,6 +417,11 @@ final class Client
                 'user_id' => $userId,
                 'name' => $file->name,
                 'mime_type' => $file->mimeType,
+                'ex_peer' => $peer === null ? null : new Peer([
+                    'type' => $peer->type,
+                    'id' => $peer->id,
+                    'access_hash' => $peer->access_hash ?? 1,
+                ]),
                 'send_type' => new SendTypeModel(['type' => $sendType]),
             ]))->await();
 

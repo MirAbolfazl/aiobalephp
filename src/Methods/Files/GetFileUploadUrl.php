@@ -16,6 +16,7 @@ class GetFileUploadUrl extends \Aiobale\Model\BaleMethod
             "mime_type" => ['alias' => "5", 'type' => "string", 'required' => true],
             "ex_peer" => ['alias' => "6", 'type' => \Aiobale\Types\Peer::class, 'default' => null],
             "send_type" => ['alias' => "7", 'type' => \Aiobale\Types\SendTypeModel::class, 'default' => null],
+            "chunk_size" => ['alias' => "8", 'type' => "int", 'default' => null],
         ]);
     }
 

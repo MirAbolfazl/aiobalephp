@@ -118,9 +118,19 @@ $uploadRequest = new GetFileUploadUrl([
     'user_id' => 42,
     'name' => $crcInput->name,
     'mime_type' => $crcInput->mimeType,
+    'ex_peer' => new Peer([
+        'type' => PeerType::GROUP,
+        'id' => 42,
+        'access_hash' => 1,
+    ]),
+    'chunk_size' => 262144,
 ]);
 $uploadRequestData = $codec->decode($codec->encode($uploadRequest), GetFileUploadUrl::class);
 assertSameValue(3421780262, $uploadRequestData['2'], 'Upload requests should encode CRC in protobuf field 2.');
+assertSameValue(42, $uploadRequestData['3'], 'Upload requests should use the authenticated Bale account ID.');
+assertSameValue(42, $uploadRequestData['6']['2'], 'Upload requests should include the target peer.');
+assertSameValue(1, $uploadRequestData['6']['3'], 'Upload target peers should use Bale\'s valid access hash.');
+assertSameValue(262144, $uploadRequestData['8'], 'Upload requests should encode the optional chunk size.');
 $uploadInfo = FileUploadInfo::fromWire(['1' => 123, '3' => 1]);
 assertSameValue(true, $uploadInfo->duplicate, 'Duplicate upload responses should be recognized.');
 assertSameValue('', $uploadInfo->url, 'Duplicate upload responses may omit an upload URL.');

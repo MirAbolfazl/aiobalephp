@@ -422,6 +422,11 @@ $uploaded = $client->uploadFile(
     progress: static function (int $sent, ?int $total): void {
         printf("آپلود: %d / %s بایت\n", $sent, $total ?? '?');
     },
+    peer: new \Aiobale\Types\Peer([
+        'type' => \Aiobale\Enums\PeerType::GROUP,
+        'id' => 123456,
+        'access_hash' => 1,
+    ]),
 )->await();
 
 echo $uploaded->file_id;
@@ -430,7 +435,8 @@ echo $uploaded->access_hash;
 
 `uploadFile()` checksum و URL آپلود را درخواست می‌کند، اندازهٔ chunk برگشتی Bale را
 رعایت می‌کند و اطلاعات فایل را برمی‌گرداند. متد سطح پایین `upload()` همچنان برای
-فرستادن `FileInput` به URL آپلودی که از قبل دارید در دسترس است.
+فرستادن `FileInput` به URL آپلودی که از قبل دارید در دسترس است. اگر فایل را برای
+ارسال به گفت‌وگوی مشخصی آپلود می‌کنید، `peer` همان مقصد را هم به `uploadFile()` بدهید.
 
 ## مدل‌ها و متدها
 
