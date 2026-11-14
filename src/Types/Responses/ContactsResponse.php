@@ -9,7 +9,7 @@ class ContactsResponse extends \Aiobale\Types\Responses\DefaultResponse
     public static function schema(): array
     {
         return array_replace(parent::schema(), [
-            "peers" => ['alias' => "4", 'type' => "array", 'items' => \Aiobale\Types\InfoPeer::class, 'required' => true],
+            "peers" => ['alias' => "4", 'type' => "array", 'items' => \Aiobale\Types\ContactPeer::class, 'default' => []],
         ]);
     }
 }

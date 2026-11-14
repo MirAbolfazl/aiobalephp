@@ -13,6 +13,8 @@ use Aiobale\Client\Client;
 use Aiobale\Client\SessionStore;
 use Aiobale\Dispatcher\Router;
 use Aiobale\Types\Chat;
+use Aiobale\Types\ContactData;
+use Aiobale\Types\ContactPeer;
 use Aiobale\Types\ExtData;
 use Aiobale\Types\ExtValue;
 use Aiobale\Types\FileUploadInfo;
@@ -23,6 +25,7 @@ use Aiobale\Types\Request;
 use Aiobale\Types\TextMessage;
 use Aiobale\Types\TemplateMessage;
 use Aiobale\Types\Responses\DefaultResponse;
+use Aiobale\Types\Responses\ContactsResponse;
 use Aiobale\Types\Responses\MessageResponse;
 
 function assertSameValue(mixed $expected, mixed $actual, string $message): void
@@ -46,6 +49,30 @@ assertSameValue(PeerType::PRIVATE, $roundTrip->type, 'Peer type should round-tri
 assertSameValue(42, $roundTrip->id, 'Peer ID should round-trip.');
 $wrappedPeer = Peer::fromWire(['1' => ['1' => 1], '2' => ['1' => 42]]);
 assertSameValue(42, $wrappedPeer->id, 'Single-value wrappers should be unwrapped.');
+
+$emptyContactsResponse = ContactsResponse::fromWire($codec->decode('', ContactsResponse::class));
+assertSameValue([], $emptyContactsResponse->peers, 'Import-contacts response should allow an empty peer list.');
+$contactsResponseWire = $codec->encode([
+    '4' => [new ContactPeer(['id' => 42, 'access_hash' => 123])],
+]);
+$contactsResponse = ContactsResponse::fromWire(
+    $codec->decode($contactsResponseWire, ContactsResponse::class),
+);
+assertSameValue(42, $contactsResponse->peers[0]->id, 'Imported contact IDs should decode from response field 4.');
+assertSameValue(123, $contactsResponse->peers[0]->access_hash, 'Imported contact access hashes should decode from response field 4.');
+$importContacts = new \Aiobale\Methods\User\ImportContacts([
+    'phones' => [
+        new ContactData([
+            'phone_number' => 989123456789,
+            'name' => new \Aiobale\Types\StringValue(['value' => 'Test contact']),
+        ]),
+    ],
+]);
+assertSameValue(
+    ContactsResponse::class,
+    $importContacts::returning(),
+    'ImportContacts should use the corrected response model.',
+);
 
 $method = new SendMessage([
     'peer' => $peer,
